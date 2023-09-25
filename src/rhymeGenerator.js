@@ -1,6 +1,6 @@
 const generateRhyme = async (note) => {
     try {
-        const response = await fetch('/api/save-note', {
+        const response = await fetch('https://speech-to-text-back.onrender.com/api/save-note', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
