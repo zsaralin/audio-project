@@ -1,6 +1,6 @@
 const generateRhyme = async (note) => {
     try {
-        const response = await fetch('http://localhost:4000/api/save-note', {
+        const response = await fetch('/api/save-note', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
