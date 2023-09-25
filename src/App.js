@@ -1,70 +1,70 @@
-import React, { useState, useEffect } from 'react'
-import './App.css'
-var rhymes = require('rhymes')
-var thesaurus = require('powerthesaurus-api')
-const SpeechRecognition =
-    window.SpeechRecognition || window.webkitSpeechRecognition
-const mic = new SpeechRecognition()
+import React, { useState, useEffect } from 'react';
+import './App.css';
+import generateRhyme from './rhymeGenerator'; // Import the function
 
-mic.continuous = true
-mic.interimResults = true
-mic.lang = 'en-US'
+const SpeechRecognition =
+    window.SpeechRecognition || window.webkitSpeechRecognition;
+const mic = new SpeechRecognition();
+
+mic.continuous = true;
+mic.interimResults = true;
+mic.lang = 'en-US';
 
 function App() {
-    const [isListening, setIsListening] = useState(false)
-    const [note, setNote] = useState(null)
-    const [savedNotes, setSavedNotes] = useState([])
+    const [isListening, setIsListening] = useState(false);
+    const [note, setNote] = useState(null);
+    const [savedNotes, setSavedNotes] = useState([]);
 
     useEffect(() => {
-        handleListen()
-    }, [isListening])
+        handleListen();
+    }, [isListening]);
 
     const handleListen = () => {
         if (isListening) {
-            mic.start()
+            mic.start();
             mic.onend = () => {
-                console.log('continue..')
-                mic.start()
-            }
+                mic.start();
+            };
         } else {
-            mic.stop()
+            mic.stop();
             mic.onend = () => {
-                console.log('Stopped Mic on Click')
-            }
+                console.log('Stopped Mic on Click');
+            };
         }
         mic.onstart = () => {
-            console.log('Mics on')
-        }
+            console.log('Mics on');
+        };
 
-        mic.onresult = event => {
+        mic.onresult = (event) => {
             const transcript = Array.from(event.results)
-                .map(result => result[0])
-                .map(result => result.transcript)
-                .join('')
-            console.log(transcript)
-            setNote(transcript)
-            mic.onerror = event => {
-                console.log(event.error)
-            }
-        }
-    }
+                .map((result) => result[0])
+                .map((result) => result.transcript)
+                .join('');
+            setNote(transcript);
+            mic.onerror = (event) => {
+                console.log(event.error);
+            };
+        };
+    };
 
-    const handleSaveNote = () => {
-        const words = note.split(" ");
-        const lastWord = words[words.length - 1];
-        const rhymeWords = (rhymes(lastWord))
-        const rhymeWord = rhymeWords.slice(0, 6)[Math.floor(Math.random() * 6)];
-        // console.log(rhymeWord)
-        thesaurus('blue', 'antonyms').then(
-            res => {
-                console.log(res)
-            },
-            err => {
-                throw err
-            }
-        )
-        setSavedNotes([...savedNotes, note])
-        setNote('')
+    const handleGenerateRhyme = async () => {
+        const generatedText = await generateRhyme(note); // Use the imported function
+        if (generatedText !== null) {
+            formatRhyme(generatedText);
+            setNote('');
+        }
+    };
+
+    function formatRhyme(inputString) {
+        const lines = inputString.split(/\d+\./);
+        const cleanedLines = lines.map((line) => line.trim()).filter((line) => line);
+
+        if (cleanedLines.length >= 3) {
+            const [row1, row2, row3] = cleanedLines;
+            setSavedNotes([...savedNotes, row1, row2, row3]);
+        } else {
+            console.error("Input string does not have enough lines.");
+        }
     }
 
     return (
@@ -74,23 +74,23 @@ function App() {
                 <div className="box">
                     <h2>Current Note</h2>
                     {isListening ? <span>🎙️</span> : <span>🛑🎙️</span>}
-                    <button onClick={handleSaveNote} disabled={!note}>
+                    <button onClick={handleGenerateRhyme} disabled={!note}>
                         Save Note
                     </button>
-                    <button onClick={() => setIsListening(prevState => !prevState)}>
+                    <button onClick={() => setIsListening((prevState) => !prevState)}>
                         Start/Stop
                     </button>
                     <p>{note}</p>
                 </div>
                 <div className="box">
                     <h2>Notes</h2>
-                    {savedNotes.map(n => (
-                        <p key={n}>{n}</p>
+                    {savedNotes.map((n, index) => (
+                        <p key={index}>{n}</p>
                     ))}
                 </div>
             </div>
         </>
-    )
+    );
 }
 
-export default App
+export default App;
