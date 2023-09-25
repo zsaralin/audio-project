@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import './App.css'
-
+var rhymes = require('rhymes')
+var thesaurus = require('powerthesaurus-api')
 const SpeechRecognition =
     window.SpeechRecognition || window.webkitSpeechRecognition
 const mic = new SpeechRecognition()
@@ -49,6 +50,19 @@ function App() {
     }
 
     const handleSaveNote = () => {
+        const words = note.split(" ");
+        const lastWord = words[words.length - 1];
+        const rhymeWords = (rhymes(lastWord))
+        const rhymeWord = rhymeWords.slice(0, 6)[Math.floor(Math.random() * 6)];
+        // console.log(rhymeWord)
+        thesaurus('blue', 'antonyms').then(
+            res => {
+                console.log(res)
+            },
+            err => {
+                throw err
+            }
+        )
         setSavedNotes([...savedNotes, note])
         setNote('')
     }
