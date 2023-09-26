@@ -92,19 +92,19 @@ export const generateSong = async (note) => {
 
 export const generateText = async (note) => {
     try {
+        const formData = new FormData();
+        formData.append('audioFile', note); // Assuming 'audioFile' is the field name expected by your server
+
         const response = await fetch('https://speech-to-text-back.onrender.com/api/whisper', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ note }),
+            body: formData,
         });
         if (response.ok) {
             const responseData = await response.json();
             const generatedText = responseData.generatedText;
             return generatedText;
         } else {
-            console.error('Failed to generate song on the backend.');
+            console.error('Failed to transcribe on the backend.');
             return null; // Handle the error or return an appropriate value
         }
     } catch (error) {
