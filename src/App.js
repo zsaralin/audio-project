@@ -311,6 +311,8 @@ function App() {
                     </div>
                 </div>
             </div>
+            <div className="footer-text">✧˚ Made by Saralin ✩°｡⋆</div>
+
         </>
     );
 }
