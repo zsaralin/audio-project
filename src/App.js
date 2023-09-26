@@ -1,7 +1,7 @@
 import React, {useState, useEffect, useRef} from 'react';
 import './App.css';
 import * as backendFn from './rhymeGenerator'; // Import the function
-import {Button, Icon} from 'semantic-ui-react';
+import { Button, Dimmer, Loader, Icon } from 'semantic-ui-react';
 import AudioRecorder from './AudioRecorder'; // Import the AudioRecorder component
 
 const SpeechRecognition =
@@ -23,11 +23,12 @@ function App() {
     const [isSpeaking, setIsSpeaking] = useState(null);
     const [uploadedFileName, setUploadedFileName] = React.useState(null);
     const [showUploadButton, setShowUploadButton] = useState(false);
-    const {SpeechSynthesisUtterance} = window;
+    const [loadingRhyme, setLoadingRhyme] = useState(false); // Loading state for Rhyme generation
+    const [loadingPoem, setLoadingPoem] = useState(false); // Loading state for Poem generation
+    const [loadingHaiku, setLoadingHaiku] = useState(false); // Loading state for Haiku generation
+    const [loadingSong, setLoadingSong] = useState(false); // Loading state for Song generation
     const voices = window.speechSynthesis.getVoices();
     const selectedVoice = voices[7];
-
-
 
     useEffect(() => {
         handleListen();
@@ -72,8 +73,9 @@ function App() {
 
     const handleGenerateRhyme = async () => {
         setRhyme([]);
-        const generatedText = await backendFn.generateRhyme(note); // Use the imported function
-        console.log(generatedText)
+        setLoadingRhyme(true); // Set loading state to true
+        const generatedText = await backendFn.generateRhyme(note);
+        setLoadingRhyme(false); // Set loading state to false after the response
         if (generatedText !== null) {
             setRhyme([generatedText]);
         } else {
@@ -83,19 +85,15 @@ function App() {
 
     const handleGeneratePoem = async () => {
         setPoem([]);
-        const generatedText = await backendFn.generatePoem(note); // Use the imported function
+        setLoadingPoem(true); // Set loading state to true
+        const generatedText = await backendFn.generatePoem(note);
+        setLoadingPoem(false); // Set loading state to false after the response
         if (generatedText !== null) {
-            // Replace escaped "\\n" with actual line breaks "\n"
             const formattedText = generatedText.replace(/\\n/g, '\n');
-
-            // Split the formatted text into an array of lines
             const lines = formattedText.split('\n');
-
-            // Map the lines to JSX elements with line breaks
             const poemElements = lines.map((line, index) => (
                 <a key={index}>{line}</a>
             ));
-
             setPoem(poemElements);
         } else {
             console.error("Input string does not have enough lines.");
@@ -104,7 +102,9 @@ function App() {
 
     const handleGenerateHaiku = async () => {
         setHaiku([]);
-        const generatedText = await backendFn.generateHaiku(note); // Use the imported function
+        setLoadingHaiku(true); // Set loading state to true
+        const generatedText = await backendFn.generateHaiku(note);
+        setLoadingHaiku(false); // Set loading state to false after the response
         if (generatedText !== null) {
             const formattedText = generatedText.replace(/\\n/g, '\n');
             const lines = formattedText.split('\n');
@@ -112,16 +112,18 @@ function App() {
                 <a key={index}>{line}</a>
             ));
             setHaiku(haikuElements);
-        } else {
+        }
+        else {
             console.error("Input string does not have enough lines.");
         }
     };
 
     const handleGenerateSong = async () => {
         setSong([]);
-        const generatedText = await backendFn.generateSong(note); // Use the imported function
+        setLoadingSong(true); // Set loading state to true
+        const generatedText = await backendFn.generateSong(note);
+        setLoadingSong(false); // Set loading state to false after the response
         if (generatedText !== null) {
-            // Replace escaped "\\n" with actual line breaks "\n"
             const formattedText = generatedText.replace(/\\n/g, '\n');
 
             // Split the formatted text into an array of lines
@@ -137,7 +139,6 @@ function App() {
             console.error("Input string does not have enough lines.");
         }
     };
-
     const speakNote = (note2) => {
         if (isSpeaking) {
             window.speechSynthesis.cancel();
@@ -232,7 +233,13 @@ function App() {
                 <div className="column">
                     <div className="box-small">
                         <button className="button-85" onClick={handleGenerateRhyme} disabled={!note}>
-                            Rhyme
+                            {loadingRhyme ? (
+                                <>
+                                    <Icon name="circle notched" loading />
+                                </>
+                            ) : (
+                                'Rhyme'
+                            )}
                         </button>
                         <Button icon basic style={{border: 'none', boxShadow: 'none', marginLeft: '-10px'}}
                                 onClick={() => speakNote(rhyme)}>
@@ -246,7 +253,13 @@ function App() {
                 <div className="column">
                     <div className="box-small">
                         <button className="button-85" onClick={handleGeneratePoem}>
-                            Poem
+                            {loadingPoem ? (
+                                <>
+                                    <Icon name="circle notched" loading />
+                                </>
+                            ) : (
+                                'Poem'
+                            )}
                         </button>
                         <Button icon basic style={{border: 'none', boxShadow: 'none', marginLeft: '-10px'}}
                                 onClick={() => speakNote2(poem)}>
@@ -260,7 +273,13 @@ function App() {
                 <div className="column">
                     <div className="box-small">
                         <button className="button-85" onClick={handleGenerateHaiku} disabled={!note}>
-                            Haiku
+                            {loadingHaiku ? (
+                                <>
+                                    <Icon name="circle notched" loading />
+                                </>
+                            ) : (
+                                'Haiku'
+                            )}
                         </button>
                         <Button icon basic style={{border: 'none', boxShadow: 'none', marginLeft: '-10px'}}
                                 onClick={() => speakNote2(haiku)}>
@@ -274,7 +293,13 @@ function App() {
                 <div className="column">
                     <div className="box-small">
                         <button className="button-85" onClick={handleGenerateSong} disabled={!note}>
-                            Song
+                                {loadingSong ? (
+                                        <>
+                                            <Icon name="circle notched" loading />
+                                        </>
+                                    ) : (
+                                        'Song'
+                                    )}
                         </button>
                         <Button icon basic style={{border: 'none', boxShadow: 'none', marginLeft: '-10px'}}
                                 onClick={() => speakNote2(song)}>
