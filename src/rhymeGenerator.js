@@ -90,15 +90,21 @@ export const generateSong = async (note) => {
     }
 };
 
-export const generateText = async (note) => {
+export const generateText = async (base64Audio) => {
     try {
         const formData = new FormData();
-        formData.append('audioFile', note); // Assuming 'audioFile' is the field name expected by your server
+        formData.append('audioFile', base64Audio); // Assuming 'audioFile' is the field name expected by your server
+        const boundary = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
 
         const response = await fetch('https://speech-to-text-back.onrender.com/api/whisper', {
             method: 'POST',
             body: formData,
+            headers: {
+                // Set the correct Content-Type for base64 data
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
         });
+
         if (response.ok) {
             const responseData = await response.json();
             const generatedText = responseData.generatedText;
@@ -112,4 +118,3 @@ export const generateText = async (note) => {
         return null; // Handle the error or return an appropriate value
     }
 };
-

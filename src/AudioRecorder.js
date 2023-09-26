@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import {Button, Icon} from "semantic-ui-react";
-import * as backendFn from "./rhymeGenerator";
-import {generateText} from "./rhymeGenerator";
+import { Button, Icon } from 'semantic-ui-react';
+import * as backendFn from './rhymeGenerator';
 
 const AudioRecorder = ({ isRecording, setIsRecording }) => {
     const [mediaRecorder, setMediaRecorder] = useState(null);
@@ -9,6 +8,7 @@ const AudioRecorder = ({ isRecording, setIsRecording }) => {
     const audioPlayerRef = useRef(null);
     const [isSpeaking, setIsSpeaking] = useState(null);
     const voices = window.speechSynthesis.getVoices();
+
     const selectedVoice = voices[7];
 
     useEffect(() => {
@@ -24,9 +24,10 @@ const AudioRecorder = ({ isRecording, setIsRecording }) => {
                 };
 
                 recorder.onstop = async () => {
-                    const audioBlob = new Blob(audioChunks, {type: 'audio/wav'});
+                    const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
                     audioPlayerRef.current.src = URL.createObjectURL(audioBlob);
-                    await backendFn.generateText(audioBlob);
+                    const base64Audio = await blobToBase64(audioBlob);
+                    await backendFn.generateText(base64Audio);
                 };
 
                 setMediaRecorder(recorder);
@@ -57,6 +58,16 @@ const AudioRecorder = ({ isRecording, setIsRecording }) => {
             audioPlayerRef.current.src = URL.createObjectURL(audioBlob);
         }
     }, [audioChunks, isRecording]);
+
+    const blobToBase64 = async (blob) => {
+        return new Promise(async (resolve, _) => {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                resolve(reader.result.split(',')[1]); // Here is the base64 string
+            };
+            reader.readAsDataURL(blob);
+        });
+    };
     const speakNote = (note2) => {
         if (isSpeaking) {
             window.speechSynthesis.cancel();

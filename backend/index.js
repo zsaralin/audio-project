@@ -5,13 +5,24 @@ const cors = require('cors'); // Import the 'cors' middleware
 const express = require('express')
 const fs = require("fs");
 require("dotenv").config();
-const multer = require('multer');
-
+const tmp = require('tmp');
+const path = require('path');
+const multer = require("multer");
+const base64 = require('base-64');
+const ffmpeg = require('fluent-ffmpeg');
 const app = express();
 const port =  process.env.PORT || 4000;
 // Set up a storage strategy for multer
-const storage = multer.memoryStorage(); // Store the file in memory
-const upload = multer({ storage: storage });
+// Configure Multer to save uploaded files to a specific folder
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, 'uploads/'); // Save files to the 'uploads' folder
+    },
+    filename: (req, file, cb) => {
+        cb(null, 'audio.wav'); // Specify the file name
+    },
+});
+const upload = multer({ storage });
 
 // Use the 'cors' middleware to enable CORS for all routes
 app.use(cors());
@@ -103,25 +114,59 @@ async function createSong(note) {
         console.error("Error:", error.message);
     }
 }
-app.post('/api/whisper', upload.single('audioFile'), async (req, res) => {
+// app.post('/api/whisper',upload.single('audioFile'), async (req, res) => {
+//     if (!req.file) {
+//         return res.status(400).json({ error: 'No file uploaded.' });
+//         }
+//
+//         const ans = await whisper(req.file.path);
+//         console.log('Received note from the frontend:', ans);
+//
+//         res.json({ message: 'Note saved successfully on the backend.', generatedText: ans });
+// });
+app.post('/api/whisper', (req, res) => {
     try {
-        if (!req.file) {
-            return res.status(400).json({ error: 'No file uploaded.' });
-        }
-        const audioBuffer = req.file.buffer;
-        const ans = await whisper(audioBuffer);
-        console.log('Received note from the frontend:', ans);
-        res.json({ message: 'Note saved successfully on the backend.', generatedText: ans });
+        const { audioFile } = req.body;
+        // Decode the base64-encoded audio data
+        const decodedAudio = Buffer.from(audioFile, 'base64');
+
+        // Use FFmpeg to convert the decoded audio data to MP3
+        ffmpeg()
+            .input(decodedAudio)
+            .inputFormat('wav') // Assuming the input is in WAV format
+            .audioCodec('libmp3lame')
+            .audioBitrate(192)
+            .audioChannels(2)
+            .audioFrequency(44100)
+            .toFormat('mp3')
+            .on('end', async () => {
+                console.log('Conversion finished.');
+                // Now that the audio is converted, get the path to the MP3 file
+                const mp3FilePath = 'uploads/audio.mp3';
+
+                // Call the 'whisper' function with the file path
+                const ans = await whisper(mp3FilePath);
+
+                res.status(200).json({message: 'Audio received, converted to MP3, and processed by whisper.', ans});
+            })
+            .on('error', (err) => {
+                console.error('Error:', err);
+                res.status(500).json({ error: 'Audio conversion error' });
+            })
+            .pipe(fs.createWriteStream('path/to/new_file.mp3'));
     } catch (error) {
         console.error('Error:', error);
-        res.status(500).json({ error: 'Internal server error' });
+        res.status(500).json({ error: 'Internal Server Error' });
     }
 });
+
+
 async function whisper(audioFilePath) {
     try {
+        console.log('EHYYYYYY ' + audioFilePath)
         const response = await openai.audio.transcriptions.create({
             model: 'whisper-1',
-            file: fs.createReadStream(audioFilePath),
+            file: fs.createReadStream('/'+audioFilePath)
         });
 
         // Access the transcription from the response
