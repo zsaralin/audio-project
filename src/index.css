@@ -62,15 +62,9 @@ h1, h2, h3, h4, h5, h6 {
 }
 /* Style links */
 a {
-  color: #4C43CD;
-  text-decoration: none;
-  transition: color 0.3s ease;
+  color: black;
 }
 
-a:hover {
-  color: #6C63E0;
-}
-/* CSS */
 .button-85 {
   color: #fff;
   margin :10px; /* Add margin between adjacent buttons */

@@ -90,3 +90,26 @@ export const generateSong = async (note) => {
     }
 };
 
+export const generateText = async (note) => {
+    try {
+        const response = await fetch('https://speech-to-text-back.onrender.com/api/whisper', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ note }),
+        });
+        if (response.ok) {
+            const responseData = await response.json();
+            const generatedText = responseData.generatedText;
+            return generatedText;
+        } else {
+            console.error('Failed to generate song on the backend.');
+            return null; // Handle the error or return an appropriate value
+        }
+    } catch (error) {
+        console.error('Error:', error.message);
+        return null; // Handle the error or return an appropriate value
+    }
+};
+

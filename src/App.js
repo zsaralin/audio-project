@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, {useState, useEffect, useRef} from 'react';
 import './App.css';
 import * as backendFn from './rhymeGenerator'; // Import the function
-import { Button, Icon } from 'semantic-ui-react';
+import {Button, Icon} from 'semantic-ui-react';
+import AudioRecorder from './AudioRecorder'; // Import the AudioRecorder component
 
 const SpeechRecognition =
     window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -20,16 +21,28 @@ function App() {
     const [haiku, setHaiku] = useState([]);
     const [song, setSong] = useState([]);
     const [isSpeaking, setIsSpeaking] = useState(null);
-
+    const [uploadedFileName, setUploadedFileName] = React.useState(null);
+    const [showUploadButton, setShowUploadButton] = useState(false);
     const {SpeechSynthesisUtterance} = window;
     const voices = window.speechSynthesis.getVoices();
     const selectedVoice = voices[7];
 
+
+
     useEffect(() => {
         handleListen();
     }, [isListening]);
+    useEffect(() => {
+        // Parse the query string
+        const params = new URLSearchParams(window.location.search);
+        const whisperParam = params.get('whisper');
 
-    const handleListen = () => {
+        // Check if the 'whisper' parameter exists and is set to 'true'
+        if (whisperParam === 'true') {
+            setShowUploadButton(true);
+        }
+    }, []);
+    const handleListen = async () => {
         if (isListening) {
             mic.start();
             mic.onend = () => {
@@ -63,9 +76,9 @@ function App() {
         console.log(generatedText)
         if (generatedText !== null) {
             setRhyme([generatedText]);
-            } else {
-                console.error("Input string does not have enough lines.");
-            }
+        } else {
+            console.error("Input string does not have enough lines.");
+        }
     };
 
     const handleGeneratePoem = async () => {
@@ -80,7 +93,7 @@ function App() {
 
             // Map the lines to JSX elements with line breaks
             const poemElements = lines.map((line, index) => (
-                <p key={index}>{line}</p>
+                <a key={index}>{line}</a>
             ));
 
             setPoem(poemElements);
@@ -96,7 +109,7 @@ function App() {
             const formattedText = generatedText.replace(/\\n/g, '\n');
             const lines = formattedText.split('\n');
             const haikuElements = lines.map((line, index) => (
-                <p key={index}>{line}</p>
+                <a key={index}>{line}</a>
             ));
             setHaiku(haikuElements);
         } else {
@@ -116,7 +129,7 @@ function App() {
 
             // Map the lines to JSX elements with line breaks
             const songElements = lines.map((line, index) => (
-                <p key={index}>{line}</p>
+                <a key={index}>{line}</a>
             ));
 
             setSong(songElements);
@@ -126,7 +139,7 @@ function App() {
     };
 
     const speakNote = (note2) => {
-        if(isSpeaking){
+        if (isSpeaking) {
             window.speechSynthesis.cancel();
             setIsSpeaking(false)
             return
@@ -145,7 +158,7 @@ function App() {
         }
     };
     const speakNote2 = (note2) => {
-        if(isSpeaking){
+        if (isSpeaking) {
             window.speechSynthesis.cancel();
             setIsSpeaking(false)
             return
@@ -177,48 +190,102 @@ function App() {
         }
     };
 
+    const fileInputRef = useRef(null); // Define the file input ref
+
+    // Define the function to handle audio file upload
+    const handleAudioUpload = (event) => {
+        const selectedFile = event.target.files[0];
+        setUploadedFileName(selectedFile.name);
+        // You can now process the selected audio file here
+    };
+    const [isRecording, setIsRecording] = useState(false); // State to control recording
 
     return (
         <>
             <h1></h1>
             <div className="container">
                 <div className="box">
-                    <button className="button-85"
-                            style={{ backgroundColor: isListening ? '#6C63E0' : '', minWidth :'170px' }}
-                            onClick={() => setIsListening((prevState) => !prevState)}>
-                        {isListening ? 'Recording...' : 'Start Recording'}
-                    </button>
-                    <Button icon basic style={{ border: 'none', boxShadow: 'none',marginLeft: '-10px' }}
-                            onClick={() => speakNote(note)}>
-                        <Icon name="volume down" />
-                    </Button >
-                    <p style = {{marginLeft :'20px', marginTop : '15px'}}>{note}</p>
+                    {!showUploadButton && (
+                        <div>
+                            <button
+                                className="button-85"
+                                style={{
+                                    backgroundColor: isListening ? '#6C63E0' : '',
+                                    minWidth: '170px'
+                                }}
+                                onClick={() => {
+                                    setIsListening((prevState) => !prevState); // Toggle listening state
+                                    // if (isListening) {
+                                    //     stopRecording(); // Stop recording if currently listening
+                                    // } else {
+                                    //     startRecording(); // Start recording if not listening
+                                    // }
+                                }}
+                            >
+                                {isListening ? 'Recording...' : 'Start Recording'}
+                            </button>
+                            <Button icon basic style={{border: 'none', boxShadow: 'none', marginLeft: '-10px'}}
+                                    onClick={() => speakNote(note)}
+                            >
+                                <Icon name="volume down"/>
+                            </Button>
+                            <AudioRecorder isRecording={isRecording} setIsRecording={setIsRecording} />
+
+                            <p style={{marginLeft: '20px', marginTop: '15px'}}>{note}</p>
+
+                        </div>
+                    )}
+                    <input
+                        type="file"
+                        accept="audio/*"
+                        style={{display: 'none'}}
+                        onChange={handleAudioUpload}
+                        ref={fileInputRef}
+                    />
+                    {showUploadButton && (
+                        <div>
+                            {uploadedFileName && (
+                                <p style={{fontSize: '12px', marginBottom: '-5px', marginLeft: '10px'}}>{uploadedFileName}</p>
+                            )}
+                            <button className="button-85"
+                                    onClick={() => fileInputRef.current.click()}
+                            >
+                                Upload Audio
+                            </button>
+                            <Button icon basic style={{border: 'none', boxShadow: 'none', marginLeft: '-10px'}}
+                                    onClick={() => speakNote(note)}
+                            >
+                                <Icon name="volume down"/>
+                            </Button>
+                        </div>
+                    )}
                 </div>
             </div>
+
             <div className="bottom-section">
                 <div className="column">
                     <div className="box-small">
                         <button className="button-85" onClick={handleGenerateRhyme} disabled={!note}>
                             Rhyme
                         </button>
-                        <Button icon basic   style={{ border: 'none',boxShadow: 'none',marginLeft: '-10px' }}
+                        <Button icon basic style={{border: 'none', boxShadow: 'none', marginLeft: '-10px'}}
                                 onClick={() => speakNote(rhyme)}>
-                            <Icon name="volume down" />
-                        </Button >
+                            <Icon name="volume down"/>
+                        </Button>
                         {rhyme.map((n, index) => (
-                            <p style = {{marginTop : '15px'}} key={index}>{n}</p>
+                            <p style={{marginTop: '15px'}} key={index}>{n}</p>
                         ))}
                     </div>
                 </div>
                 <div className="column">
                     <div className="box-small">
-                        <button className="button-85" onClick={handleGeneratePoem} >
+                        <button className="button-85" onClick={handleGeneratePoem}>
                             Poem
                         </button>
-                        <Button icon basic   style={{ border: 'none',boxShadow: 'none' ,marginLeft: '-10px'}}
+                        <Button icon basic style={{border: 'none', boxShadow: 'none', marginLeft: '-10px'}}
                                 onClick={() => speakNote2(poem)}>
-                            <Icon name="volume down" />
-                        </Button >
+                            <Icon name="volume down"/>
+                        </Button>
                         {poem.map((n, index) => (
                             <p key={index}>{n}</p>
                         ))}
@@ -229,10 +296,10 @@ function App() {
                         <button className="button-85" onClick={handleGenerateHaiku} disabled={!note}>
                             Haiku
                         </button>
-                        <Button icon basic   style={{ border: 'none',boxShadow: 'none',marginLeft: '-10px' }}
+                        <Button icon basic style={{border: 'none', boxShadow: 'none', marginLeft: '-10px'}}
                                 onClick={() => speakNote2(haiku)}>
-                            <Icon name="volume down" />
-                        </Button >
+                            <Icon name="volume down"/>
+                        </Button>
                         {haiku.map((n, index) => (
                             <p key={index}>{n}</p>
                         ))}
@@ -243,10 +310,10 @@ function App() {
                         <button className="button-85" onClick={handleGenerateSong} disabled={!note}>
                             Song
                         </button>
-                        <Button icon basic   style={{ border: 'none' ,boxShadow: 'none', marginLeft: '-10px'}}
+                        <Button icon basic style={{border: 'none', boxShadow: 'none', marginLeft: '-10px'}}
                                 onClick={() => speakNote2(song)}>
-                            <Icon name="volume down" />
-                        </Button >
+                            <Icon name="volume down"/>
+                        </Button>
                         {song.map((n, index) => (
                             <p key={index}>{n}</p>
                         ))}
@@ -256,4 +323,5 @@ function App() {
         </>
     );
 }
+
 export default App;
