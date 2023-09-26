@@ -205,7 +205,6 @@ function App() {
             <h1></h1>
             <div className="container">
                 <div className="box">
-                    {!showUploadButton && (
                         <div>
                             <button
                                 className="button-85"
@@ -215,11 +214,6 @@ function App() {
                                 }}
                                 onClick={() => {
                                     setIsListening((prevState) => !prevState); // Toggle listening state
-                                    // if (isListening) {
-                                    //     stopRecording(); // Stop recording if currently listening
-                                    // } else {
-                                    //     startRecording(); // Start recording if not listening
-                                    // }
                                 }}
                             >
                                 {isListening ? 'Recording...' : 'Start Recording'}
@@ -229,36 +223,8 @@ function App() {
                             >
                                 <Icon name="volume down"/>
                             </Button>
-                            <AudioRecorder isRecording={isRecording} setIsRecording={setIsRecording} />
-
                             <p style={{marginLeft: '20px', marginTop: '15px'}}>{note}</p>
-
-                        </div>
-                    )}
-                    <input
-                        type="file"
-                        accept="audio/*"
-                        style={{display: 'none'}}
-                        onChange={handleAudioUpload}
-                        ref={fileInputRef}
-                    />
-                    {showUploadButton && (
-                        <div>
-                            {uploadedFileName && (
-                                <p style={{fontSize: '12px', marginBottom: '-5px', marginLeft: '10px'}}>{uploadedFileName}</p>
-                            )}
-                            <button className="button-85"
-                                    onClick={() => fileInputRef.current.click()}
-                            >
-                                Upload Audio
-                            </button>
-                            <Button icon basic style={{border: 'none', boxShadow: 'none', marginLeft: '-10px'}}
-                                    onClick={() => speakNote(note)}
-                            >
-                                <Icon name="volume down"/>
-                            </Button>
-                        </div>
-                    )}
+            </div>
                 </div>
             </div>
 
